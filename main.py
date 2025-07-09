@@ -2,6 +2,7 @@ import parse
 import node
 import math
 import pandas as pd
+from collections import Counter
 pd.set_option("display.max_rows", 100)
 pd.set_option("display.max_columns", 100)
 
@@ -29,8 +30,6 @@ def compute_entropy():
 
 def compute_weighted_child_entropy(attribute):
     weights = {}
-    entropy = {}
-    mul_weights_entropy = {}
     final_entropy_val = []
     print("Attribute being tested is : ", attribute)
     values = [row[attribute] for row in data]
@@ -38,21 +37,26 @@ def compute_weighted_child_entropy(attribute):
     print(f"Values are \n {values}")
     print(f"Counts are \n {counts}")
 
-    # calculate the weight for each unique value
+    # calculate the weight for each unique value, this will be multipled with the entropy
     for unique_value in counts.keys():
+        probability = {}
+        print(f"Unique value is {unique_value}")
         weights[unique_value] = counts[unique_value] / len(values) 
-        prob = counts[unique_value] / len(values)
-        entropy[unique_value] = -prob * math.log2(prob)
-        mul_weights_entropy[unique_value] = weights[unique_value] * entropy[unique_value]
+        # in this case class label does not have to be cleared
+        class_label = [row["Class"] for row in data if row[attribute] == unique_value]
+        print(f"Now we can compute the entropy for the unique value {unique_value}") 
+        entropy_counts = Counter(class_label)
+        for uni_val in entropy_counts.keys():
+            probability[uni_val] = -(entropy_counts[uni_val]/ len(class_label) * math.log2(entropy_counts[uni_val]/ len(class_label)))
+        print(probability)
+        entropy_unique_val = sum(probability.values())
 
-    final_entropy_val.append(sum(mul_weights_entropy.values()))
-
-    print(f"weights are {weights}")
-    print(f"Entropy is {entropy}")
-    print(f"Weights and entropy multiplied is {mul_weights_entropy}")
-
-    print(f"Final entropy value for attribute {attribute} is {mul_weights_entropy}")
-
+        # w0*h0
+        mul_weights_entropy = weights[unique_value] * entropy_unique_val
+        final_entropy_val.append(mul_weights_entropy)
+        print(final_entropy_val)
+    print(f"Final entropy compute is {sum(final_entropy_val)}")
+    # return sum(final_entropy_val)
     # Now we can compute the entropy
     # pass
 
