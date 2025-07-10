@@ -24,10 +24,6 @@ def extract_attributes(data, target_col_name):
     # return the list of attributes extracted
     return attributes
 
-def compute_entropy():
-    
-    pass
-
 def compute_weighted_child_entropy(attribute):
     weights = {}
     final_entropy_val = []
@@ -40,7 +36,6 @@ def compute_weighted_child_entropy(attribute):
     # calculate the weight for each unique value, this will be multipled with the entropy
     for unique_value in counts.keys():
         probability = {}
-        print(f"Unique value is {unique_value}")
         weights[unique_value] = counts[unique_value] / len(values) 
         # in this case class label does not have to be cleared
         class_label = [row["Class"] for row in data if row[attribute] == unique_value]
@@ -56,9 +51,23 @@ def compute_weighted_child_entropy(attribute):
         final_entropy_val.append(mul_weights_entropy)
         print(final_entropy_val)
     print(f"Final entropy compute is {sum(final_entropy_val)}")
-    # return sum(final_entropy_val)
-    # Now we can compute the entropy
-    # pass
+    return sum(final_entropy_val)
+
+def check_homogeniety_attribute_split(data, attribute):
+    values = [row[attribute] for row in data]
+    counts = {label: values.count(label) for label in set(values)}
+    final_label = []
+
+    for unique_value in counts.keys():
+        print(f"Unique value is {unique_value}")
+        # get all the class labels associated with that unique value
+        class_label = [row["Class"] for row in data if row[attribute] == unique_value]
+        if len(set(class_label)) == 1:
+            print("Homegenous condition reached")
+        else:
+            print("Homegenous condition not reached")
+
+
 
 def stopping_criteria(data):
     # find out the most common label
@@ -85,12 +94,18 @@ def stopping_criteria(data):
         return t
     else:
         print("Homogeniety not encountered, building the decision tree further")
+        attribute_list = []
+        entropy_att = []
         for att in attributes:
-            compute_weighted_child_entropy(att)
-            break
-        # # compute the entropy
-        # return t  
-    
+            attribute_list.append(att)
+            entropy = compute_weighted_child_entropy(att)
+            entropy_att.append(entropy)
+        att_entropy = dict(zip(attribute_list, entropy_att))
+        print(f"Entropy computed for all attributes {att_entropy}")    
+        best_attribute = min(att_entropy, key=att_entropy.get)
+        print(f"Attribute to split on is {best_attribute}")
+        check_homogeniety_attribute_split(data, best_attribute)
+
 if __name__ == "__main__":
     data = parse.parse("candy.data")
     stopping_criteria(data)
