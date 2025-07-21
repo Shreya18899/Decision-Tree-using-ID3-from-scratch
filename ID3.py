@@ -1,5 +1,5 @@
 from node import Node
-import math
+from helper_functions import extract_attributes, build_tree
 
 def ID3(examples, default):
   '''
@@ -8,6 +8,12 @@ def ID3(examples, default):
   and the target class variable is a special attribute with the name "Class".
   Any missing attributes are denoted with a value of "?"
   '''
+  # Returns the default label if no data is found
+  if not examples:
+    return Node(label=default)
+  attributes = extract_attributes(examples, "Class")
+  return build_tree(examples, attributes)
+
 
 def prune(node, examples):
   '''
