@@ -134,3 +134,9 @@ def print_tree(node, depth=0):
     else:
         print(f"{indent}[Leaf: Predict {node.label}]")
 
+def split_train_test(data, train_percent, test_percent):
+    print(f"Total number of rows is : {len(data)}")
+    print(f"{train_percent} of data for training = {train_percent * len(data)} rows and {test_percent} of data for testing = {test_percent * len(data)}")
+    train = data[:int(train_percent * len(data))]
+    test = data[int(train_percent * len(data)):]
+    return train, test
