@@ -1,4 +1,5 @@
 import ID3, parse, random
+from helper_functions import print_tree
 
 def testID3AndEvaluate():
   data = [dict(a=1, b=0, Class=1), dict(a=1, b=1, Class=1)]
@@ -21,7 +22,8 @@ def testPruning():
   tree = ID3.ID3(data, 0)
   ID3.prune(tree, validationData)
   if tree != None:
-    ans = ID3.evaluate(tree, dict(a=0, b=0, c=1, d=0))
+    # Added the data parameter
+    ans = ID3.evaluate(tree, dict(a=0, b=0, c=1, d=0), data)
     if ans != 1:
       print("pruning test failed.")
     else:
@@ -36,6 +38,8 @@ def testID3AndTest():
   testData = [dict(a=1, b=0, c=1, Class=1), dict(a=1, b=1, c=1, Class=1), 
   dict(a=0, b=0, c=1, Class=0), dict(a=0, b=1, c=1, Class=0)]
   tree = ID3.ID3(trainData, 0)
+  print("Finished building tree")
+  print_tree(tree)
   fails = 0
   if tree != None:
     acc = ID3.test(tree, trainData)
