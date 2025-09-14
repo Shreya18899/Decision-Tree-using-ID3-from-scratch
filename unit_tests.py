@@ -17,13 +17,19 @@ def testID3AndEvaluate():
 def testPruning():
   # data = [dict(a=1, b=1, c=1, Class=0), dict(a=1, b=0, c=0, Class=0), dict(a=0, b=1, c=0, Class=1), dict(a=0, b=0, c=0, Class=1), dict(a=0, b=0, c=1, Class=0)]
   # validationData = [dict(a=0, b=0, c=1, Class=1)]
-  data = [dict(a=0, b=1, c=1, d=0, Class=1), dict(a=0, b=0, c=1, d=0, Class=0), dict(a=0, b=1, c=0, d=0, Class=1), dict(a=1, b=0, c=1, d=0, Class=0), dict(a=1, b=1, c=0, d=0, Class=0), dict(a=1, b=1, c=0, d=1, Class=0), dict(a=1, b=1, c=1, d=0, Class=0)]
-  validationData = [dict(a=0, b=0, c=1, d=0, Class=1), dict(a=1, b=1, c=1, d=1, Class = 0)]
+  data = [dict(a=0, b=1, c=1, d=0, Class=1),
+          dict(a=0, b=0, c=1, d=0, Class=0),
+          dict(a=0, b=1, c=0, d=0, Class=1),
+          dict(a=1, b=0, c=1, d=0, Class=0),
+          dict(a=1, b=1, c=0, d=0, Class=0), 
+          dict(a=1, b=1, c=0, d=1, Class=0), 
+          dict(a=1, b=1, c=1, d=0, Class=0)]
+  validationData = [dict(a=0, b=0, c=1, d=0, Class=1),
+                    dict(a=1, b=1, c=1, d=1, Class = 0)]
   tree = ID3.ID3(data, 0)
-  ID3.prune(tree, validationData)
+  ID3.prune(tree, validationData, root=tree, path_from_root=[])
   if tree != None:
-    # Added the data parameter
-    ans = ID3.evaluate(tree, dict(a=0, b=0, c=1, d=0), data)
+    ans = ID3.evaluate(tree, dict(a=0, b=0, c=1, d=0))
     if ans != 1:
       print("pruning test failed.")
     else:

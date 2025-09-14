@@ -16,12 +16,73 @@ def ID3(examples, default):
   print(f"Attributes are: {attributes}")
   return build_tree(examples, attributes)
 
+def examples_reaching_node(node, examples, path_from_root):
+    """
+    Returns a subset of examples that would reach the given node,
+    based on the decisions along the path from the root.
+    """
+    filtered = []
+    for ex in examples:
+        reach = True
+        for attr, val in path_from_root:
+            if ex[attr] != val:
+                reach = False
+                break
+        if reach:
+            filtered.append(ex)
+    return filtered
 
-def prune(node, examples):
+def prune(node, examples, root, path_from_root=[]):
   '''
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
   '''
+  # Base case: if already leaf node → nothing to prune
+  if not node.children:
+      return node
+  
+  # Recurse on children first (post-order) - get the bottom internal node
+  # Make the parent node point to the reassigned / pruned node and not the older version of the tree
+  for val, child in list(node.children.items()):
+      prune_path = path_from_root + [(node.label, val)]
+      node.children[val] = prune(child, examples=examples, root=root, path_from_root=prune_path)
+
+  # Filter validation examples that actually reach this node
+  subset = examples_reaching_node(node, examples, path_from_root)
+  if not subset: 
+     return node
+
+  # Compute the validation with the whole tree with no nodes pruned - root node passed
+  val_accuracy_before = test(root, examples)
+  print(f"Validation accuracy before the current node is pruned {val_accuracy_before}")  
+
+  # Remove the tree connected to node {node} and recompute the accuracy 
+  # pruned_node and node are two references to the exact same object in memory
+  # Save the original label so that if val accuracy does not decrease we can pass the original tree
+  saved_node_label = node.label
+  saved_node_children = node.children
+  print(f"Current node is {node}")
+  # make current node - leaf node by getting the most common label in validation
+  node.label = most_common_label(subset, "Class")
+  # remove any children - pruning part
+  node.children = {}
+  print(f"Node of current children are {node.children}")
+
+  print(f"Label of current node is {node.label}")
+
+  # now compute accuracy after pruning
+  val_accuracy_after = test(root, examples)
+  print(f"Validation accuracy after the current node pruned is {val_accuracy_after}")  
+
+  if val_accuracy_after < val_accuracy_before:
+    print("Condition is true")
+    # revert to original
+    node.label = saved_node_label
+    node.children = saved_node_children
+  else:
+    print("Accuracy increased after pruning")
+  return node
+
 
 def test_candy(node, examples, train, actuals):
   '''
@@ -75,6 +136,7 @@ def evaluate(node, example):
   Takes in a tree and one example.  Returns the Class value that the tree
   assigns to the example.
   '''
+  print(f"Reached evaluate with node {node} and example as {example}")
   if not node.children:
     print("No more children found")
     # if leaf node is encountered - return the prediction else keep traversing
@@ -112,8 +174,8 @@ def test(node, examples):
     all_predictions.append(result)
     actuals.append(y)
   for i,j in zip(all_predictions, actuals):
-    print(i, j)
-    print(type(i), type(j))
+    # print(i, j)
+    # print(type(i), type(j))
     if int(i)==int(j):
       count=count+1
   accuracy = count / len(all_predictions)
