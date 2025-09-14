@@ -1,11 +1,27 @@
 import math
 from collections import Counter
 import node
+import random
 
 def most_common_label(data, target_col_name):
     labels = [row[target_col_name] for row in data]
     counts = {label: labels.count(label) for label in set(labels)}
     return max(counts, key=counts.get)  
+
+def majority_voting(pred_dict):
+    # Get list of predictions at each index
+    n = len(next(iter(pred_dict.values())))
+    final_preds = []
+    for i in range(n):
+        # collect predictions from all trees at position i
+        # k = tree1, tree2 and i is the index position such that ith_preds - gives the values of index position i for trees 1 and 2 
+        # or trees 1-n
+        ith_preds = [pred_dict[k][i] for k in pred_dict]
+        # find majority by taking the top most common element (.most_common(1)) and then taking the first tuple with the first value
+        majority = Counter(ith_preds).most_common(1)[0][0]
+        final_preds.append(majority)
+    return final_preds
+
 
 def get_categories_column(data, col):
     values = [row[col] for row in data]
@@ -142,3 +158,67 @@ def split_train_test(data, train_percent, test_percent):
     train = data[:int(train_percent * len(data))]
     test = data[int(train_percent * len(data)):]
     return train, test
+
+def RF_build_tree(data, attributes):
+    # find out the most common label
+    cl = most_common_label(data, "Class")
+    print(f"Most common label in data is {cl}")
+
+    # label the node with the most common label in the data
+    t = node.Node(label=cl)
+    # print(t.label)
+
+    # check the target class
+    label, is_homogenous = check_homogeniety(data, "Class")
+
+    # If all observations contain only positive or negative observations return
+    if is_homogenous == True or not attributes: 
+        print("Stopping condition met")
+        if is_homogenous:
+            # label with the homogenous class
+            t = node.Node(label=next(iter(label)) if label else None) 
+        else:
+            # Label with the most common class
+            t = node.Node(label=cl)  
+        return t
+    else:
+        print("Homogeniety not encountered, building the decision tree further")
+        attribute_list_tested = []
+        entropy_att = []
+        # random sample 4 attributes and decide which ones to split on
+        k = min(1, len(attributes))
+        feature_samples = random.sample(attributes, k=k)
+        print(f"Number of features being considered during rf split is {len(feature_samples)} which are {feature_samples}")
+        # compute the entropy
+        for att in feature_samples:
+            attribute_list_tested.append(att)
+            entropy = compute_weighted_child_entropy(data,att)
+            entropy_att.append(entropy)
+        att_entropy = dict(zip(attribute_list_tested, entropy_att))
+        print(f"Entropy computed for all attributes {att_entropy}")    
+        best_attribute = min(att_entropy, key=att_entropy.get)
+        print(f"Attribute to split on is {best_attribute}")
+
+        # create leaf node with the attribute with min entropy which becomes 
+        # the root node
+        root = node.Node(label=best_attribute)
+        values, counts = get_categories_column(data, best_attribute)
+        # children of this node would be the unique values of the attribute
+        for category in counts.keys():
+            subset = [row for row in data if row[best_attribute] == category]
+            # if subset is empty
+            if not subset:
+                # No data for this branch → default to majority class in the data
+                root.children[category] = node.Node(label=cl)
+            else:
+                class_label = [row["Class"] for row in data if row[best_attribute] == category]
+                # if the category contains class labels which are homegenous
+                if len(set(class_label) )== 1:
+                    root.children[category] = node.Node(label=int(next(iter(class_label))))
+                else:
+                    # Implement recursive but only with the subset of data
+                    # Attribute that was split on is getting removed ??
+                    remaining_attrs = [a for a in attributes if a != best_attribute]
+                    child_subtree = build_tree(subset, attributes=remaining_attrs) 
+                    root.children[category] = child_subtree
+        return root

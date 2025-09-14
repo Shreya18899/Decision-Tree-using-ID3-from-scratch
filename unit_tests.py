@@ -86,7 +86,7 @@ def testPruningOnHouseData(inFile):
     acc = ID3.test(tree, test)
     print("test accuracy: ",acc)
   
-    ID3.prune(tree, valid)
+    ID3.prune(tree, valid, root=tree, path_from_root=[])
     acc = ID3.test(tree, train)
     print("pruned tree train accuracy: ",acc)
     acc = ID3.test(tree, valid)
